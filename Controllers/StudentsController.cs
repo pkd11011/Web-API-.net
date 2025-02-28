@@ -35,10 +35,43 @@ namespace WebApi.Controllers
                 return BadRequest(new { message = "Invalid student data. Name and Class are required." });
             }
 
+            // Kiểm tra nếu có ảnh
+            if (!string.IsNullOrWhiteSpace(student.Photo))
+            {
+                if (!student.Photo.StartsWith("data:image"))
+                {
+                    return BadRequest(new { message = "Invalid image format. Must be Base64 encoded." });
+                }
+            }
+
             _context.Students.Add(student);
             await _context.SaveChangesAsync();
 
             return Created("", student);
+        }
+        [HttpPut("UpdatePhoto/{id}")]
+        public async Task<IActionResult> UpdatePhoto(int id, [FromBody] string base64ImageString)
+        {
+            if (string.IsNullOrWhiteSpace(base64ImageString))
+            {
+                return BadRequest(new { message = "Ảnh không được để trống!" });
+            }
+
+            var student = await _context.Students.FindAsync(id);
+            if (student == null)
+            {
+                return NotFound(new { message = "Không tìm thấy sinh viên!" });
+            }
+
+            if (!base64ImageString.StartsWith("data:image"))
+            {
+                return BadRequest(new { message = "Invalid image format. Must be Base64 encoded." });
+            }
+
+            student.Photo = base64ImageString;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Ảnh đã cập nhật thành công!", student });
         }
     }
 }
